@@ -1,0 +1,31 @@
+# Checks a built tarball the way a dyno will use it: the plain run image (no -dev packages, no compiler), the
+# tarball untarred where bin/compile puts it, PATH as .profile.d/000_ffmpeg.sh sets it. If this image builds, the
+# buildpack works on that stack. Context is the repo root.
+#
+#   docker buildx build --platform linux/amd64 --build-arg STACK_VERSION=26 --build-arg FFMPEG_VERSION=8.1.3 \
+#     --build-arg TARBALL=build/ffmpeg-8.1.3-heroku-26-amd64.tar.gz -f container/Dockerfile.test .
+
+ARG STACK_VERSION=26
+
+# Unpacked in the build image (it has python3; GNU tar fails under Rosetta emulation, see container/Dockerfile)
+# so the run image below stays exactly what a dyno has.
+FROM heroku/heroku:${STACK_VERSION}-build AS unpack
+ARG TARBALL
+USER root
+COPY ${TARBALL} /tmp/ffmpeg.tar.gz
+RUN mkdir -p /app/.heroku/ffmpeg \
+  && python3 -c 'import sys, tarfile; tarfile.open(sys.argv[1]).extractall(sys.argv[2], filter="data")' /tmp/ffmpeg.tar.gz /app/.heroku/ffmpeg
+
+FROM heroku/heroku:${STACK_VERSION}
+
+ARG FFMPEG_VERSION
+USER root
+
+COPY --from=unpack /app/.heroku/ffmpeg /app/.heroku/ffmpeg
+
+ENV PATH="/app/.heroku/ffmpeg/bin:${PATH}"
+
+# Linking, the capability lists, the must-haves, and the pipeline's own commands on the sample files (downloaded
+# from the webapp's public sample library inside the check)
+COPY test/check.sh test/expected_capabilities.txt test/samples.txt test/subtitles.srt /tmp/test/
+RUN bash /tmp/test/check.sh "${FFMPEG_VERSION}" /tmp/test

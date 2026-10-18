@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# bin/compile <BUILD_DIR> <CACHE_DIR> <ENV_DIR>
+#
+# Installs the ffmpeg build this repo's release holds for the stack, pinned here by the version and the tarball's
+# sha256: a re-published asset of the same name fails the build instead of changing what runs. The binaries go on
+# PATH through .profile.d; they link the stack image's own shared libraries (libx264, libass, libdav1d...), which
+# the image carries for Heroku's ffmpeg buildpack.
+
+set -eu -o pipefail
+
+case "${STACK}" in
+  heroku-26)
+    FFMPEG_VERSION="8.1.3"
+    FFMPEG_SHA256="FILL_IN_FROM_THE_RELEASE_SHA256_ASSET"
+    ;;
+  *)
+    echo " !     The ffmpeg buildpack has no build for the '${STACK}' stack" >&2
+    exit 1
+    ;;
+esac
+
+BUILDPACK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_DIR="$1"
+ARCH="$(dpkg --print-architecture)"
+RELEASE="ffmpeg-${FFMPEG_VERSION}"
+TARBALL="${RELEASE}-${STACK}-${ARCH}.tar.gz"
+INSTALL_URL="https://github.com/fieldnotescommunities/heroku-ffmpeg-buildpack/releases/download/${RELEASE}/${TARBALL}"
+INSTALL_DIR="${BUILD_DIR}/.heroku/ffmpeg"
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+echo "-----> Installing ffmpeg ${FFMPEG_VERSION} for ${STACK} (${ARCH})"
+
+download_dir="$(mktemp -d)"
+trap 'rm -rf "${download_dir}"' EXIT
+
+echo "Downloading ${INSTALL_URL}" | indent
+curl --fail --silent --show-error --location --retry 3 --retry-connrefused \
+  --connect-timeout "${CURL_CONNECT_TIMEOUT:-5}" --output "${download_dir}/${TARBALL}" "${INSTALL_URL}"
+
+if ! echo "${FFMPEG_SHA256}  ${download_dir}/${TARBALL}" | sha256sum --check --status -; then
+  echo " !     ${TARBALL} does not match the sha256 pinned in bin/compile" >&2
+  echo " !     expected ${FFMPEG_SHA256}" >&2
+  echo " !     got      $(sha256sum "${download_dir}/${TARBALL}" | cut -d ' ' -f 1)" >&2
+  exit 1
+fi
+echo "sha256 verified" | indent
+
+mkdir -p "${INSTALL_DIR}"
+tar -xzf "${download_dir}/${TARBALL}" -C "${INSTALL_DIR}"
+echo "Installed $("${INSTALL_DIR}/bin/ffmpeg" -version | head -1)" | indent
+
+# Run time: $HOME is /app. Prepending keeps any other buildpack's ffmpeg (none today) behind ours.
+mkdir -p "${BUILD_DIR}/.profile.d"
+cat > "${BUILD_DIR}/.profile.d/000_ffmpeg.sh" <<'EOF'
+export PATH="$HOME/.heroku/ffmpeg/bin:$PATH"
+EOF
+
+# Build time, for the buildpacks that run after this one
+cat > "${BUILDPACK_DIR}/export" <<EOF
+export PATH="${INSTALL_DIR}/bin:\$PATH"
+EOF
+
+echo "Done" | indent

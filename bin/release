@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# bin/release <BUILD_DIR>
+# Nothing to add to the release: the runtime environment comes from .profile.d/000_ffmpeg.sh.
+
+echo "--- {}"

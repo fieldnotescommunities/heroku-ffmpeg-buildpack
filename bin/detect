@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# bin/detect <BUILD_DIR>
+# Always applies: the app opts in by adding the buildpack.
+
+echo "ffmpeg"
+exit 0
