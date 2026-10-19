@@ -1,0 +1,17 @@
+# Sample files the run-image check downloads and runs the pipeline's commands on: one URL per line, from the Field
+# Notes webapp's public sample library (config/media_smoke_test/samples.yml there; the full library is what its
+# smoke test runs on a dyno). One file per shape the build must handle: by extension, .mpga .wav .m4a .ogg are
+# audio and run the audio commands, everything else is video. Lines starting with # are ignored.
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/ios-app-transcoded-1024x576.m4v
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/iphone-gallery-h264-2audio.mov
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/hevc-rotated-admin.mov
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/iphone-gallery-hevc10-dolbyvision-720p.mov
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/legacy-mpeg4-asp.m4v
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/legacy-flv.flv
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/video-without-audio.m4v
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/webm-vp9-opus.webm
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/av1-aac.mp4
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/mp3-mono.mpga
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/wav-stereo.wav
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/iphone-inapp.m4a
+https://d1gcj309m8i7pe.cloudfront.net/fieldnotes/testdata/2026-09-24-lqe9ng3pbp-media-samples/originals/ogg-vorbis.ogg

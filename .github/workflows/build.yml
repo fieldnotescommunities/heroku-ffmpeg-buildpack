@@ -1,0 +1,53 @@
+name: Build ffmpeg
+
+# Every pull request builds and checks the ffmpeg version bin/compile pins (the Dockerfiles and the component lists
+# are what a PR here changes). A manual run builds the given version and publishes it as the assets of the release
+# `ffmpeg-<version>`; re-running for the same version replaces the assets, and the sha256 pinned in bin/compile then
+# stops matching until it is moved on purpose.
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ffmpeg_version:
+        description: "ffmpeg version (the release as ffmpeg.org names it; its tarball's sha256 must be in container/checksums.txt)"
+        required: true
+        default: "8.1.3"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Choose the version
+        id: version
+        run: |
+          version="${{ inputs.ffmpeg_version }}"
+          if [ -z "$version" ]; then
+            version="$(sed -n 's/^ *FFMPEG_VERSION="\(.*\)"/\1/p' bin/compile | head -1)"
+            echo "pull request: building the version bin/compile pins, ffmpeg ${version}"
+          fi
+          echo "ffmpeg_version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and check
+        env:
+          FFMPEG_VERSION: ${{ steps.version.outputs.ffmpeg_version }}
+        run: ./build.sh
+
+      - name: Publish as release assets
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FFMPEG_VERSION: ${{ steps.version.outputs.ffmpeg_version }}
+        run: |
+          tag="ffmpeg-${FFMPEG_VERSION}"
+          if ! gh release view "$tag" > /dev/null 2>&1; then
+            gh release create "$tag" --title "ffmpeg ${FFMPEG_VERSION}" \
+              --notes "Trimmed ffmpeg ${FFMPEG_VERSION} for Heroku stacks, built by the Build ffmpeg workflow. Pin the tarball's sha256 in bin/compile."
+          fi
+          gh release upload "$tag" build/* --clobber
+          echo "Pinned values for bin/compile:"
+          cat build/*.sha256
