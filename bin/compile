@@ -11,7 +11,7 @@ set -eu -o pipefail
 case "${STACK}" in
   heroku-26)
     FFMPEG_VERSION="8.1.3"
-    FFMPEG_SHA256="FILL_IN_FROM_THE_RELEASE_SHA256_ASSET"
+    FFMPEG_SHA256="3927457684966bc14235e0f9d98dcdcf0354dbdbad2660f8f13f8be8d9753097"
     ;;
   *)
     echo " !     The ffmpeg buildpack has no build for the '${STACK}' stack" >&2
